@@ -1,14 +1,25 @@
-####
-#UPD from ROH H3M2 WES data
-###
 
-## Material and methods
+# UPD
 
-### Requirements
+## from mendelian inconcordance
+
+### Material and methods
+
+#### Requirements
+
+#### Collect data for reference panel
+
+
+
+## from ROH H3M2 WES data
+
+### Material and methods
+
+#### Requirements
 
 R
 
-### Collect data for reference panel
+#### Collect data for reference panel
 
 Number of samples :
 ```
@@ -149,7 +160,7 @@ cd /ifs/data/research/projects/kevin/UPD/2018_ROH_all_processed/
 find . -name "*.bed" | xargs -n 1 tail -n +2 >> 2018_allROH_processed.tsv
 ```
 
-### Create z-score for all chromosome
+#### Create z-score for all chromosome
 
 Create z-score and column for filtering
 ```
