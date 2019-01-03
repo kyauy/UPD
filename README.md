@@ -5,9 +5,52 @@
 
 ### Material and methods
 
-#### Requirements
+##### Requirements
 
-#### Collect data
+#### Complete process with bcftools
+
+Prepare data for mendelian concordance analysis
+```
+### Prepare file with child and parents name
+16:06:46 kevin::login03 { ~/UPD/data/Whole }-> sed "s/.\{5\}/&-/" family.txt | sed 's/\t.\{5\}/&-/g' | sed '/^ /d' | sed '/^?/d' | sed '1d' | sort | sed '1d' > family_sorted.txt
+
+### Fit for PED format in excel and remove duplicate: family_sorted_mendel.txt
+
+### Remove double -- : sed -i 's/--/-/g' family_sorted_mendel.txt
+
+### Remove duplicate
+17:38:36 kevin::login01 { ~/UPD/data/Whole }-> uniq /ifs/data/research/projects/kevin/UPD/child_sorted.txt >  /ifs/data/research/projects/kevin/UPD/child_sorted_uniq.txt
+
+### Create PED for each family
+for i in $(cat < "/ifs/data/research/projects/kevin/UPD/child_sorted_uniq.txt") ; do grep "$i" /ifs/data/research/projects/kevin/UPD/family_sorted_mendel.txt > /ifs/data/research/projects/kevin/UPD/VCFtools/$(echo "$i").mendel; done
+
+### Copy all needed VCF
+
+for i in /ifs/data/diagnostics/nextseq/exomes/work/DNA*/GRCh37_*/SNVC*/*.vcf* ; do cp -n $i /ifs/data/research/projects/kevin/UPD/VCF ; done
+for i in /ifs/data/diagnostics/bgi/exomes/work/DNA*/GRCh37_*/SNVC*/*.vcf* ; do cp -n $i /ifs/data/research/projects/kevin/UPD/VCF ; done
+
+
+```
+
+Merge VCF
+
+```
+### Create new folder with fitted for merge VCF
+
+cp -r /ifs/data/research/projects/kevin/UPD/VCF /ifs/data/research/projects/kevin/UPD/VCF_MC
+
+for file in *haplotypecaller*; do mv "$file" "${file/_haplotypecaller/}" ; done
+for file in *unifiedgenotyper*; do mv "$file" "${file/_unifiedgenotyper/}" ; done
+
+## Add - for DNA names in VCF
+for i in /ifs/data/research/projects/kevin/UPD/VCF_MC ; do sed -i "s/FORMAT\t.\{5\}/&-/" $i ; sed -i 's/--/-/g' $i ; done
+
+### Merge in VCFmerge folder
+mkdir /ifs/data/research/projects/kevin/UPD/VCFmerge/
+for i in $(cat < "/ifs/data/research/projects/kevin/UPD/family_sorted_mendel.txt") ; do IFS=$'\n' ; bcftools merge -o /ifs/data/research/projects/kevin/UPD/VCFmerge/$(echo $i | cut -f2)_merged.vcf -O v -m none /ifs/data/research/projects/kevin/UPD/VCF_MC/$(echo $i | cut -f2).vcf /ifs/data/research/projects/kevin/UPD/VCF_MC/$(echo $i | cut -f3).vcf /ifs/data/research/projects/kevin/UPD/VCF_MC/$(echo $i | cut -f4).vcf ; done
+```
+
+#### Collect data from previous pipeline
 
 Copy all data
 
@@ -325,6 +368,12 @@ tail -n+2 allROH_processed_jg_zscore_quality.tsv | awk -F "\t" '$(NF-3) <= 2 && 
 cut -f1-24 allROH_processed_jg_zscore_quality_filtered_2.tsv > allROH_processed_jg_zscore_quality_filtered_2_R.tsv
 ```
 
+Get addition size of all ROH by sample
+
+```
+15:56:01 kevin::login03 { ~/UPD/data/Whole/ROH_all_processed }-> awk '{for(i=1;i<=NF;i++) t+=$i; print $0"\t"t; t=0}' allROH_processed.tsv | cut -f1,26 | sed 's/e\t0/e\tSize/' > allROH_processed_sumsize.tsv
+```
+
 #### Create z-score for all chromosome
 
 Create z-score and column for filtering
@@ -408,14 +457,53 @@ Filter file with =< X chromosome under 2
 ### ALL
 cut -f1-24 allROH_processed_zscore_quality.tsv > allROH_processed_zscore_quality_R.tsv
 
-### 1
+### >2 - 1
 head -n1 allROH_processed_zscore_quality.tsv > allROH_processed_zscore_quality_filtered_1.tsv
 tail -n+2 allROH_processed_zscore_quality.tsv | awk -F "\t" '$(NF-3) == 1 {print $0}' >> allROH_processed_zscore_quality_filtered_1.tsv
 cut -f1-24 allROH_processed_zscore_quality_filtered_1.tsv > allROH_processed_zscore_quality_filtered_1_R.tsv
 
-#### 2
+#### >2 - 2
 head -n1 allROH_processed_zscore_quality.tsv > allROH_processed_zscore_quality_filtered_2.tsv
 tail -n+2 allROH_processed_zscore_quality.tsv | awk -F "\t" '$(NF-3) <= 2 && $(NF-3) > 0 {print $0}' >> allROH_processed_zscore_quality_filtered_2.tsv
 cut -f1-24 allROH_processed_zscore_quality_filtered_2.tsv > allROH_processed_zscore_quality_filtered_2_R.tsv
+
+### > 1.5 and 2- 1
+head -n1 allROH_processed_zscore_quality.tsv > allROH_processed_zscore_quality_filtered_1.5.tsv
+tail -n+2 allROH_processed_zscore_quality.tsv | awk -F "\t" '$(NF-4) == 1 {print $0}' | awk -F "\t" '$(NF-3) == 1 {print $0}'  >> allROH_processed_zscore_quality_filtered_1.5.tsv
+cut -f1-24 allROH_processed_zscore_quality_filtered_1.5.tsv > allROH_processed_zscore_quality_filtered_1.5_R.tsv
+
+
 ```
+
+#### Create median absolute deviation for all chromosome
+
+Create MAD and column for filtering
+Need the quantable package
+```
+### ALL
+Rscript ~/UPD/MADscore.R /ifs/data/research/projects/kevin/UPD/ROH_all_processed/allROH_processed.tsv
+
+### Create columns for filtering
+# without median awk -F "\t" '{if(NR==1) c="Number>1.5"; else for(i=2;i<=NF;i++) c+=($i>1.5); print $0,c; c=0}' /ifs/data/research/projects/kevin/UPD/ROH_all_processed/allROH_processed_MADscore.tsv | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>2"; else for(i=2;i<=NF-1;i++) d+=($i>2); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>3"; else for(i=2;i<=NF-2;i++) d+=($i>3); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>4"; else for(i=2;i<=NF-3;i++) d+=($i>4); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>5"; else for(i=2;i<=NF-4;i++) d+=($i>5); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | sed '1s/^/Sample\t/'  > /ifs/data/research/projects/kevin/UPD/ROH_all_processed/allROH_processed_MADscore_quality.tsv
+
+awk -F "\t" '{if(NR==1) c="Number>1.5"; else for(i=2;i<=NF-1;i++) c+=($i>1.5); print $0,c; c=0}' /ifs/data/research/projects/kevin/UPD/ROH_all_processed/allROH_processed_MADscore.tsv | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>2"; else for(i=2;i<=NF-2;i++) d+=($i>2); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>3"; else for(i=2;i<=NF-3;i++) d+=($i>3); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>4"; else for(i=2;i<=NF-4;i++) d+=($i>4); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>5"; else for(i=2;i<=NF-5;i++) d+=($i>5); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | sed '1s/^/Sample\t/'  > /ifs/data/research/projects/kevin/UPD/ROH_all_processed/allROH_processed_MADscore_quality.tsv
+
+cp /ifs/data/research/projects/kevin/UPD/ROH_all_processed/allROH_processed_MADscore_quality.tsv /ifs/data/research/projects/kevin/UPD/results
+
+### Filter file with =< X chromosome under 2
+### ALL
+cut -f1-24 allROH_processed_MADscore_quality.tsv > allROH_processed_MADscore_quality_R.tsv
+
+#### >2 - 2
+head -n1 allROH_processed_MADscore_quality.tsv > allROH_processed_MADscore_quality_filtered_2.tsv
+tail -n+2 allROH_processed_MADscore_quality.tsv | awk -F "\t" '$(NF-3) <= 2 && $(NF-3) > 0 {print $0}' >> allROH_processed_MADscore_quality_filtered_2.tsv
+cut -f1-24 allROH_processed_MADscore_quality_filtered_2.tsv > allROH_processed_MADscore_quality_filtered_2_R.tsv
+
+#### >3 - 2
+head -n1 allROH_processed_MADscore_quality.tsv > allROH_processed_MADscore_quality_filtered_3.tsv
+tail -n+2 allROH_processed_MADscore_quality.tsv | awk -F "\t" '$(NF-2) <= 2 && $(NF-2) > 0 {print $0}' >> allROH_processed_MADscore_quality_filtered_3.tsv
+cut -f1-23 allROH_processed_MADscore_quality_filtered_3.tsv > allROH_processed_MADscore_quality_filtered_3_R.tsv
+
+```
+
 
