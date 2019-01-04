@@ -7,6 +7,76 @@
 
 ##### Requirements
 
+UPDio
+```
+R Dependencies
+    quantsmooth
+    ggplot2
+ Perl Dependencies
+    Statistics::R (0.31)
+    Path::Class
+    Vcf
+    Iterator::Simple
+    List::MoreUtils
+    Math::Round
+    Const::Fast
+UPDio was tested using R version 2.14.1
+```
+
+#### With UPDio
+
+One script is missing in version 1.0
+```
+cp ~/UPDio/version_0.9/scripts/plot_zygosity_and_events.R ~/UPDio/version_1.0/scripts/
+
+```
+Pre-processing data
+
+```
+for i in /ifs/data/research/projects/kevin/UPD/VCFtest/*.vcf; do cat $i | perl -I "/ifs/home/kevin/perl5/lib/perl5/" ../scripts/sort-vcf | bgzip > $(basename "$i" | cut -d_ -f1).sorted.vcf.gz ; perl -I "/ifs/home/kevin/perl5/lib/perl5/" ../scripts/add_hom_refs_to_vcf.pl --polymorphic_sites ../sample_data/common_variants_within_well_covered_target_regions.txt --no_homREF_vcf $(basename "$i" | cut -d_ -f1).sorted.vcf.gz | bgzip > $(basename "$i" | cut -d_ -f1).sorted.homREFed.vcf.gz ; done
+```
+
+Run UPDio
+
+```
+perl -I "/ifs/home/kevin/perl5/lib/perl5/" UPDio.pl --child_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03831B.sorted.homREFed.vcf.gz --mom_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03833B.sorted.homREFed.vcf.gz --dad_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03832B.sorted.homREFed.vcf.gz --path_to_R /cm/shared/apps/bioinf/R/3.5.1/bin/R --R_scripts_dir /ifs/home/kevin/UPDio/version_1.0/scripts --include_MI
+
+perl -I "/ifs/home/kevin/perl5/lib/perl5/" UPDio.pl --child_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA11-26540B.sorted.homREFed.vcf.gz --mom_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA12-07537B.sorted.homREFed.vcf.gz --dad_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA12-07536B.sorted.homREFed.vcf.gz --path_to_R /cm/shared/apps/bioinf/R/3.5.1/bin/R --R_scripts_dir /ifs/home/kevin/UPDio/version_1.0/scripts
+```
+
+Two loops that rule them all
+
+```
+## PREPROCESSING LOOP
+for i in /ifs/data/research/projects/kevin/UPD/VCF/*.vcf; do cat $i | perl -I "/ifs/home/kevin/perl5/lib/perl5/" /ifs/home/kevin/UPDio/version_1.0/scripts/sort-vcf | bgzip > /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(basename "$i" | cut -d_ -f1).sorted.vcf.gz ; perl -I "/ifs/home/kevin/perl5/lib/perl5/"  /ifs/home/kevin/UPDio/version_1.0/scripts/add_hom_refs_to_vcf.pl --polymorphic_sites  /ifs/home/kevin/UPDio/version_1.0/sample_data/common_variants_within_well_covered_target_regions.txt --no_homREF_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(basename "$i" | cut -d_ -f1).sorted.vcf.gz | bgzip > /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(basename "$i" | cut -d_ -f1).sorted.homREFed.vcf.gz ; rm -f /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(basename "$i" | cut -d_ -f1).sorted.vcf.gz ; done
+
+## UPDio LOOP
+
+for i in $(cat < "/ifs/data/research/projects/kevin/UPD/family_sorted_mendel.txt") ; do IFS=$'\n' ; perl -I "/ifs/home/kevin/perl5/lib/perl5/" UPDio.pl --child_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(echo $i | cut -f2).sorted.homREFed.vcf.gz  --mom_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(echo $i | cut -f4).sorted.homREFed.vcf.gz --dad_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(echo $i | cut -f3).sorted.homREFed.vcf.gz --path_to_R /cm/shared/apps/bioinf/R/3.5.1/bin/R --R_scripts_dir /ifs/home/kevin/UPDio/version_1.0/scripts --output_path ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed --include_MI ; done
+```
+
+Plot legend
+
+```
+BPI = Biparental
+UA = Uniparental Ambigous
+UI = Uniparental Isodisomic
+
+Informative genotype combinations. Sites at which parents are opposing homozygotes
+and the child is heterozygous are diagnostic of biparental inheritance. Uniparental
+inheritance combinations include those that obligately result from isodisomy (UI), and
+those that may result from either heterodisomy or isodisomy (UA) as the proband
+alleles may have arisen from a duplication of one parental homolog, or may present
+both homologs. True isodisomy events will have mixtures of both of these informative
+types, while true heterodisomy events will be void of UI types.
+```
+
+Create a file with all data
+
+```
+for i in /ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed/*upd; do awk '{print FILENAME (NF?"\t":"") $0}' $i | sed 's/.sorted.homREFed.upd//g' >> /ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed/complete_UPD.tsv ; done
+```
+
 #### Complete process with bcftools
 
 Prepare data for mendelian concordance analysis
