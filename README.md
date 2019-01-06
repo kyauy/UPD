@@ -39,7 +39,7 @@ for i in /ifs/data/research/projects/kevin/UPD/VCFtest/*.vcf; do cat $i | perl -
 Run UPDio
 
 ```
-perl -I "/ifs/home/kevin/perl5/lib/perl5/" UPDio.pl --child_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03831B.sorted.homREFed.vcf.gz --mom_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03833B.sorted.homREFed.vcf.gz --dad_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03832B.sorted.homREFed.vcf.gz --path_to_R /cm/shared/apps/bioinf/R/3.5.1/bin/R --R_scripts_dir /ifs/home/kevin/UPDio/version_1.0/scripts --include_MI
+perl -I "/ifs/home/kevin/perl5/lib/perl5/" UPDio.pl --child_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03831B.sorted.homREFed.vcf.gz --mom_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03833B.sorted.homREFed.vcf.gz --dad_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03832B.sorted.homREFed.vcf.gz --path_to_R /cm/shared/apps/bioinf/R/3.5.1/bin/R --R_scripts_dir /ifs/home/kevin/UPDio/version_1.0/scripts --include_MI --common_cnv_file /ifs/home/kevin/UPDio/version_1.0/sample_data/common_dels_1percent.tsv
 
 perl -I "/ifs/home/kevin/perl5/lib/perl5/" UPDio.pl --child_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA11-26540B.sorted.homREFed.vcf.gz --mom_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA12-07537B.sorted.homREFed.vcf.gz --dad_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA12-07536B.sorted.homREFed.vcf.gz --path_to_R /cm/shared/apps/bioinf/R/3.5.1/bin/R --R_scripts_dir /ifs/home/kevin/UPDio/version_1.0/scripts
 ```
@@ -51,8 +51,7 @@ Two loops that rule them all
 for i in /ifs/data/research/projects/kevin/UPD/VCF/*.vcf; do cat $i | perl -I "/ifs/home/kevin/perl5/lib/perl5/" /ifs/home/kevin/UPDio/version_1.0/scripts/sort-vcf | bgzip > /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(basename "$i" | cut -d_ -f1).sorted.vcf.gz ; perl -I "/ifs/home/kevin/perl5/lib/perl5/"  /ifs/home/kevin/UPDio/version_1.0/scripts/add_hom_refs_to_vcf.pl --polymorphic_sites  /ifs/home/kevin/UPDio/version_1.0/sample_data/common_variants_within_well_covered_target_regions.txt --no_homREF_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(basename "$i" | cut -d_ -f1).sorted.vcf.gz | bgzip > /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(basename "$i" | cut -d_ -f1).sorted.homREFed.vcf.gz ; rm -f /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(basename "$i" | cut -d_ -f1).sorted.vcf.gz ; done
 
 ## UPDio LOOP
-
-for i in $(cat < "/ifs/data/research/projects/kevin/UPD/family_sorted_mendel.txt") ; do IFS=$'\n' ; perl -I "/ifs/home/kevin/perl5/lib/perl5/" UPDio.pl --child_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(echo $i | cut -f2).sorted.homREFed.vcf.gz  --mom_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(echo $i | cut -f4).sorted.homREFed.vcf.gz --dad_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(echo $i | cut -f3).sorted.homREFed.vcf.gz --path_to_R /cm/shared/apps/bioinf/R/3.5.1/bin/R --R_scripts_dir /ifs/home/kevin/UPDio/version_1.0/scripts --output_path ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed --include_MI ; done
+for i in $(cat < "/ifs/data/research/projects/kevin/UPD/family_sorted_mendel.txt") ; do IFS=$'\n' ; perl -I "/ifs/home/kevin/perl5/lib/perl5/" UPDio.pl --child_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(echo $i | cut -f2).sorted.homREFed.vcf.gz  --mom_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(echo $i | cut -f4).sorted.homREFed.vcf.gz --dad_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(echo $i | cut -f3).sorted.homREFed.vcf.gz --path_to_R /cm/shared/apps/bioinf/R/3.5.1/bin/R --R_scripts_dir /ifs/home/kevin/UPDio/version_1.0/scripts --output_path ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed --include_MI --common_cnv_file /ifs/home/kevin/UPDio/version_1.0/sample_data/common_dels_1percent.tsv ; done
 ```
 
 Plot legend
@@ -75,6 +74,12 @@ Create a file with all data
 
 ```
 for i in /ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed/*upd; do awk '{print FILENAME (NF?"\t":"") $0}' $i | sed 's/.sorted.homREFed.upd//g' >> /ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed/complete_UPD.tsv ; done
+```
+
+Specific analysis with trio for publication
+```
+sed 's/\t.\{5\}/&-/g' FamilyInformation.txt | sed '/^ /d' | sed '/^?/d' | sort -n > FamilyInformation_sorted.txt
+for i in $(cat < "/ifs/data/research/projects/kevin/UPD/FamilyInformation_sorted.txt") ; do IFS=$'\n' ; perl -I "/ifs/home/kevin/perl5/lib/perl5/" /ifs/home/kevin/UPDio/version_1.0/UPDio.pl --child_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(echo $i | cut -f2).sorted.homREFed.vcf.gz  --mom_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(echo $i | cut -f4).sorted.homREFed.vcf.gz --dad_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(echo $i | cut -f3).sorted.homREFed.vcf.gz --path_to_R /cm/shared/apps/bioinf/R/3.5.1/bin/R --R_scripts_dir /ifs/home/kevin/UPDio/version_1.0/scripts --output_path ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed_pub --include_MI --common_cnv_file /ifs/home/kevin/UPDio/version_1.0/sample_data/common_dels_1percent.tsv ; done
 ```
 
 #### Complete process with bcftools
