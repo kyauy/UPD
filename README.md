@@ -36,10 +36,23 @@ Pre-processing data
 for i in /ifs/data/research/projects/kevin/UPD/VCFtest/*.vcf; do cat $i | perl -I "/ifs/home/kevin/perl5/lib/perl5/" ../scripts/sort-vcf | bgzip > $(basename "$i" | cut -d_ -f1).sorted.vcf.gz ; perl -I "/ifs/home/kevin/perl5/lib/perl5/" ../scripts/add_hom_refs_to_vcf.pl --polymorphic_sites ../sample_data/common_variants_within_well_covered_target_regions.txt --no_homREF_vcf $(basename "$i" | cut -d_ -f1).sorted.vcf.gz | bgzip > $(basename "$i" | cut -d_ -f1).sorted.homREFed.vcf.gz ; done
 ```
 
+Get CNV
+```
+for i in /ifs/data/diagnostics/nextseq/exomes/work/DNA*/GRCh37_*/CNVCalling*_conifer/*_calls.txt ; do cp -n $i /ifs/data/research/projects/kevin/UPD/CNV ; done
+for i in /ifs/data/diagnostics/bgi/exomes/work/DNA*/GRCh37_*/CNVCalling*_conifer/*_calls.txt ; do cp -n $i /ifs/data/research/projects/kevin/UPD/CNV ; done
+
+### Select sample to use CNV
+
+for i in $(cat /ifs/data/research/projects/kevin/UPD/results/compare/upd_called.txt) ; do cp -n /ifs/data/research/projects/kevin/UPD/CNV/$(echo $i)_calls.txt /ifs/data/research/projects/kevin/UPD/CNV_pub ; done
+for i in $(cat /ifs/data/research/projects/kevin/UPD/results/compare/upd_called.txt) ; do grep $i /ifs/data/research/projects/kevin/UPD/FamilyInformation_sorted.txt >> /ifs/data/research/projects/kevin/UPD/FamilyInformation_sorted_UPD_wo_CNV.txt ; done
+
+for i in /ifs/data/research/projects/kevin/UPD/CNV_pub/*calls.txt ; do tail -n+2 $i | cut -f2,3,4 > /ifs/data/research/projects/kevin/UPD/CNV_pub/$(basename $i | cut -d_ -f1).cnv.txt ; done
+```
+
 Run UPDio
 
 ```
-perl -I "/ifs/home/kevin/perl5/lib/perl5/" UPDio.pl --child_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03831B.sorted.homREFed.vcf.gz --mom_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03833B.sorted.homREFed.vcf.gz --dad_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03832B.sorted.homREFed.vcf.gz --path_to_R /cm/shared/apps/bioinf/R/3.5.1/bin/R --R_scripts_dir /ifs/home/kevin/UPDio/version_1.0/scripts --include_MI --common_cnv_file /ifs/home/kevin/UPDio/version_1.0/sample_data/common_dels_1percent.tsv
+perl -I "/ifs/home/kevin/perl5/lib/perl5/" UPDio.pl --child_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03831B.sorted.homREFed.vcf.gz --mom_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03833B.sorted.homREFed.vcf.gz --dad_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03832B.sorted.homREFed.vcf.gz --path_to_R /cm/shared/apps/bioinf/R/3.5.1/bin/R --R_scripts_dir /ifs/home/kevin/UPDio/version_1.0/scripts --include_MI --common_cnv_file /ifs/home/kevin/UPDio/version_1.0/sample_data/common_dels_1percent.tsv --increase_cnv_filtering --child_cnv_data /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA18-03831B_cnv.txt
 
 perl -I "/ifs/home/kevin/perl5/lib/perl5/" UPDio.pl --child_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA11-26540B.sorted.homREFed.vcf.gz --mom_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA12-07537B.sorted.homREFed.vcf.gz --dad_vcf /ifs/home/kevin/UPDio/version_1.0/pre_processing/DNA12-07536B.sorted.homREFed.vcf.gz --path_to_R /cm/shared/apps/bioinf/R/3.5.1/bin/R --R_scripts_dir /ifs/home/kevin/UPDio/version_1.0/scripts
 ```
@@ -80,7 +93,24 @@ Specific analysis with trio for publication
 ```
 sed 's/\t.\{5\}/&-/g' FamilyInformation.txt | sed '/^ /d' | sed '/^?/d' | sort -n > FamilyInformation_sorted.txt
 for i in $(cat < "/ifs/data/research/projects/kevin/UPD/FamilyInformation_sorted.txt") ; do IFS=$'\n' ; perl -I "/ifs/home/kevin/perl5/lib/perl5/" /ifs/home/kevin/UPDio/version_1.0/UPDio.pl --child_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(echo $i | cut -f2).sorted.homREFed.vcf.gz  --mom_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(echo $i | cut -f4).sorted.homREFed.vcf.gz --dad_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$(echo $i | cut -f3).sorted.homREFed.vcf.gz --path_to_R /cm/shared/apps/bioinf/R/3.5.1/bin/R --R_scripts_dir /ifs/home/kevin/UPDio/version_1.0/scripts --output_path ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed_pub --include_MI --common_cnv_file /ifs/home/kevin/UPDio/version_1.0/sample_data/common_dels_1percent.tsv ; done
+## UPDio loop
+sh loop.sh
+## UPDio loop for UPD with CNV data
+sh loop_w_cnv.sh
+
+## file with all data
+for i in /ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed_pub/*upd; do awk '{print FILENAME (NF?"\t":"") $0}' $i | sed 's/.sorted.homREFed.upd//g' | sed 's/\/ifs\/data\/research\/projects\/kevin\/UPD\/VCF_UPDio_processed_pub\///g' >> /ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed_pub/complete_UPD.tsv ; done
+
+## file with all data + cnv
+for i in /ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed_pub_cnv/*upd; do awk '{print FILENAME (NF?"\t":"") $0}' $i | sed 's/.sorted.homREFed.upd//g' | sed 's/\/ifs\/data\/research\/projects\/kevin\/UPD\/VCF_UPDio_processed_pub_cnv\///g' >> /ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed_pub_cnv/complete_UPD_pub_cnv.tsv ; done
+
+## COPY png
+for i in /ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed_pub/*png; do cp -n $i /ifs/data/research/projects/kevin/UPD/results_png ; done
+## Compare with ROH
+for i in $(cat results/ROH_complete_iso.txt) ; do ls VCF_UPDio_processed_pub | grep $i ; done
 ```
+
+
 
 #### Complete process with bcftools
 
@@ -561,9 +591,13 @@ Rscript ~/UPD/MADscore.R /ifs/data/research/projects/kevin/UPD/ROH_all_processed
 ### Create columns for filtering
 # without median awk -F "\t" '{if(NR==1) c="Number>1.5"; else for(i=2;i<=NF;i++) c+=($i>1.5); print $0,c; c=0}' /ifs/data/research/projects/kevin/UPD/ROH_all_processed/allROH_processed_MADscore.tsv | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>2"; else for(i=2;i<=NF-1;i++) d+=($i>2); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>3"; else for(i=2;i<=NF-2;i++) d+=($i>3); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>4"; else for(i=2;i<=NF-3;i++) d+=($i>4); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>5"; else for(i=2;i<=NF-4;i++) d+=($i>5); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | sed '1s/^/Sample\t/'  > /ifs/data/research/projects/kevin/UPD/ROH_all_processed/allROH_processed_MADscore_quality.tsv
 
+## ALL samples
 awk -F "\t" '{if(NR==1) c="Number>1.5"; else for(i=2;i<=NF-1;i++) c+=($i>1.5); print $0,c; c=0}' /ifs/data/research/projects/kevin/UPD/ROH_all_processed/allROH_processed_MADscore.tsv | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>2"; else for(i=2;i<=NF-2;i++) d+=($i>2); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>3"; else for(i=2;i<=NF-3;i++) d+=($i>3); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>4"; else for(i=2;i<=NF-4;i++) d+=($i>4); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | awk -F "\t" '{if(NR==1) d="Number>5"; else for(i=2;i<=NF-5;i++) d+=($i>5); print $0,d; d=0}' | column -t | sed 's/ \+ /\t/g' | sed '1s/^/Sample\t/'  > /ifs/data/research/projects/kevin/UPD/ROH_all_processed/allROH_processed_MADscore_quality.tsv
-
 cp /ifs/data/research/projects/kevin/UPD/ROH_all_processed/allROH_processed_MADscore_quality.tsv /ifs/data/research/projects/kevin/UPD/results
+
+## Just publication trio
+head -n1 /ifs/data/research/projects/kevin/UPD/ROH_all_processed/allROH_processed_MADscore_quality.tsv > /ifs/data/research/projects/kevin/UPD/ROH_all_processed/pubtrioROH_processed_MADscore_quality.tsv
+for i in $( cut -f2 /ifs/data/research/projects/kevin/UPD/FamilyInformation_sorted.txt ); do grep $i /ifs/data/research/projects/kevin/UPD/ROH_all_processed/allROH_processed_MADscore_quality.tsv >> /ifs/data/research/projects/kevin/UPD/ROH_all_processed/pubtrioROH_processed_MADscore_quality.tsv ; done
 
 ### Filter file with =< X chromosome under 2
 ### ALL
@@ -579,6 +613,22 @@ head -n1 allROH_processed_MADscore_quality.tsv > allROH_processed_MADscore_quali
 tail -n+2 allROH_processed_MADscore_quality.tsv | awk -F "\t" '$(NF-2) <= 2 && $(NF-2) > 0 {print $0}' >> allROH_processed_MADscore_quality_filtered_3.tsv
 cut -f1-23 allROH_processed_MADscore_quality_filtered_3.tsv > allROH_processed_MADscore_quality_filtered_3_R.tsv
 
+### for publication
+head -n1 pubtrioROH_processed_MADscore_quality.tsv > pubtrioROH_processed_MADscore_quality_filtered_3.tsv
+tail -n+2 pubtrioROH_processed_MADscore_quality.tsv | awk -F "\t" '$(NF-2) <= 2 && $(NF-2) > 0 {print $0}' >> pubtrioROH_processed_MADscore_quality_filtered_3.tsv
+cut -f1-23 pubtrioROH_processed_MADscore_quality_filtered_3.tsv > pubtrioROH_processed_MADscore_quality_filtered_3_R.tsv
+
 ```
 
+## Compare ROH vs UPDio
+
+Good ROH on UPDio
+```
+for i in $( cut -f2 /ifs/data/research/projects/kevin/UPD/results/compare/pubtrioROH_med3_2.list ); do grep $i /ifs/data/research/projects/kevin/UPD/results/complete_UPD_pub.tsv >> /ifs/data/research/projects/kevin/UPD/results/compare/pubtrioROH_med3_2.updio.tsv ; done
+```
+
+Good UPDio Isodisomy on ROH
+```
+19:14:47 kevin::login04 { ~/UPD/data/Whole/results/compare }-> python merge.py
+```
 
