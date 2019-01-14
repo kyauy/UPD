@@ -629,6 +629,8 @@ for i in $( cut -f2 /ifs/data/research/projects/kevin/UPD/results/compare/pubtri
 
 Good UPDio Isodisomy on ROH
 ```
+sed -i 's/ \+ /\t/g' complete_UPD_pub_cnv_formerge.tsv
+sed -i 's/ /\t/g' complete_UPD_pub_cnv_formerge.tsv
 19:14:47 kevin::login04 { ~/UPD/data/Whole/results/compare }-> python merge.py
 ```
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-file=/ifs/data/research/projects/kevin/UPD/FamilyInformation_sorted_UPD_wo_CNV_rest.txt 
+file=/ifs/data/research/projects/kevin/UPD/family_sorted_mendel.txt 
 while read -r line ; do   
   echo line
   echo ${line}
@@ -17,5 +17,5 @@ while read -r line ; do
 #  echo /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$( echo $line | cut -f2 ).sorted.homREFed.vcf.gz
 #  echo complete mom
 #  echo /ifs/data/research/projects/kevin/UPD/VCF_UPDio/$( echo $line | cut -f4 ).sorted.homREFed.vcf.gz
-perl -I "/ifs/home/kevin/perl5/lib/perl5/" /ifs/home/kevin/UPDio/version_1.0/UPDio.pl --child_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/${child}.sorted.homREFed.vcf.gz  --mom_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/${mom}.sorted.homREFed.vcf.gz --dad_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/${dad}.sorted.homREFed.vcf.gz --path_to_R /cm/shared/apps/bioinf/R/3.5.1/bin/R --R_scripts_dir /ifs/home/kevin/UPDio/version_1.0/scripts --output_path /ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed_pub_cnv --include_MI --common_cnv_file /ifs/home/kevin/UPDio/version_1.0/sample_data/common_dels_1percent.tsv --child_cnv_data /ifs/data/research/projects/kevin/UPD/CNV_pub/${child}.cnv.txt  
+perl -I "/ifs/home/kevin/perl5/lib/perl5/" /ifs/home/kevin/UPDio/version_1.0/UPDio.pl --child_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/${child}.sorted.homREFed.vcf.gz  --mom_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/${mom}.sorted.homREFed.vcf.gz --dad_vcf /ifs/data/research/projects/kevin/UPD/VCF_UPDio/${dad}.sorted.homREFed.vcf.gz --path_to_R /cm/shared/apps/bioinf/R/3.5.1/bin/R --R_scripts_dir /ifs/home/kevin/UPDio/version_1.0/scripts --output_path /ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed_cnv --include_MI --common_cnv_file /ifs/home/kevin/UPDio/version_1.0/sample_data/common_dels_1percent.tsv --child_cnv_data /ifs/data/research/projects/kevin/UPD/CNV/${child}.cnv.txt  
 done < $file
