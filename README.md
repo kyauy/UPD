@@ -110,7 +110,27 @@ for i in /ifs/data/research/projects/kevin/UPD/VCF_UPDio_processed_pub/*png; do 
 for i in $(cat results/ROH_complete_iso.txt) ; do ls VCF_UPDio_processed_pub | grep $i ; done
 ```
 
+Selected UPD from 4912 trio
+```
+### list of all samples
+15:43:28 kevin::login03 { ~/UPD/data/Whole/VCF_UPDio_processed_cnv }-> ls *.upd | cut -f1 -d. > allsamples.txt
 
+### list of selected upd
+11:34:25 kevin::login03 { ~/UPD/data/Whole/results_png }-> ls | grep -f selectedupd.txt > selectedupd_filename.txt
+11:34:51 kevin::login03 { ~/UPD/data/Whole/results_png }-> mkdir selected
+11:35:10 kevin::login03 { ~/UPD/data/Whole/results_png }-> cat selectedupd_filename.txt |  xargs -I % cp % selected/
+
+### get H3M2 plot of selected upd
+while read -r line; do
+    cp -n /ifs/data/diagnostics/bgi/exomes/work/${line}/GRCh37_*/ROH_*/*.pdf selected/
+    cp -n /ifs/data/diagnostics/nextseq/exomes/work/${line}/GRCh37_*/ROH_*/*.pdf selected/
+done < selectedupd.txt
+
+
+### get MAD score only for UPDIO trio
+15:49:46 kevin::login03 { ~/UPD/data/Whole/VCF_UPDio_processed_cnv }-> head -n1 ../results/allROH_processed.tsv > trioupdioROH_processed_MADscore.tsv
+15:51:07 kevin::login03 { ~/UPD/data/Whole/VCF_UPDio_processed_cnv }-> grep -f ~/UPD/data/Whole/VCF_UPDio_processed_cnv/allsamples.txt ../results/allROH_processed_MADscore_quality.tsv >> trioupdioROH_processed_MADscore.tsv
+```
 
 #### Complete process with bcftools
 
